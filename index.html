@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portofolio & Kasir Dinamis</title>
+    
+    <!-- Library Chart.js untuk Grafik Statistik Animasi -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Hilangkan Jejak Kotak Biru & Tap Delay di Semua Browser / Perangkat */
+        *, *::before, *::after {
+            -webkit-tap-highlight-color: transparent !important;
+            outline: none !important;
+        }
+
+        /* Tema Warna Programmer Blue */
+        :root {
+            --bg-color: #0f172a; --card-bg: #1e293b; --primary: #38bdf8;
+            --text-main: #f8fafc; --text-muted: #94a3b8; --danger: #ef4444;
+            --success: #4ade80; --warning: #f59e0b;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; position: relative; min-height: 100vh; }
+        
+        /* CLASS UNTUK MENGUNCI SCROLL BACKGROUND SAAT MODAL TERBUKA */
+        body.modal-open { overflow: hidden !important; }
+
+        /* Canvas Background Digital (SUPER OPTIMIZED) */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+        }
+
+        /* Ikon Menyala */
+        .glow-dot-blue { display: inline-block; width: 10px; height: 10px; background-color: var(--primary); border-radius: 50%; box-shadow: 0 0 8px var(--primary); animation: pulse-blue 1.5s infinite alternate; margin-right: 8px; }
+        @keyframes pulse-blue { from { opacity: 0.7; box-shadow: 0 0 5px var(--primary); } to { opacity: 1; box-shadow: 0 0 12px var(--primary); } }
+        
+        .glow-dot-green { display: inline-block; width: 6px; height: 6px; background-color: var(--success); border-radius: 50%; box-shadow: 0 0 5px var(--success); animation: pulse-green 1.5s infinite alternate; margin-right: 6px; }
+        @keyframes pulse-green { from { opacity: 0.7; box-shadow: 0 0 3px var(--success); } to { opacity: 1; box-shadow: 0 0 8px var(--success); } }
+
+        /* IKON DIGITAL HUTANG */
+        .digital-debt-icon {
+            display: inline-block;
+            position: relative;
+            width: 14px;
+            height: 14px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .digital-debt-icon::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border: 2px solid transparent; border-top: 2px solid var(--danger); border-right: 2px solid var(--danger);
+            border-radius: 50%; animation: spin 1s linear infinite; box-shadow: 0 0 5px rgba(239, 68, 68, 0.4);
+        }
+        .digital-debt-icon::after {
+            content: ''; position: absolute; top: 3.5px; left: 3.5px; right: 3.5px; bottom: 3.5px;
+            background: var(--danger); border-radius: 50%; animation: pulse-danger 1s infinite alternate;
+        }
+        @keyframes pulse-danger { from { opacity: 0.6; transform: scale(0.8); } to { opacity: 1; transform: scale(1.1); } }
+
+        /* SVG Icon Helpers */
+        .svg-icon { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* Profile & Tools */
+        .profile-container { text-align: center; margin-bottom: 30px; padding: 20px; background: rgba(30, 41, 59, 0.95); border-radius: 15px; box-shadow: 0 6px 12px rgba(0,0,0,0.5); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); }
+        #clock-container { display: flex; align-items: center; justify-content: center; font-size: 0.85em; color: var(--success); font-weight: 500; margin: 8px 0 0 0; letter-spacing: 0.5px; }
+        
+        /* Dompet / Saldo Elegan */
+        #wallet-container { display: inline-flex; align-items: center; justify-content: center; font-size: 0.85em; font-weight: bold; margin-top: 10px; background: rgba(15, 23, 42, 0.9); padding: 4px 12px; border-radius: 15px; border: 1px solid #334155; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+        .saldo-label { color: var(--text-muted); margin-right: 5px; font-weight: 500; font-size: 0.9em; }
+        
+        /* Admin Button Minimalis Inline */
+        .admin-btn-inline { 
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px; 
+            font-size: 0.85em; font-weight: bold; background: rgba(15, 23, 42, 0.9); 
+            padding: 6px 14px; border-radius: 15px; border: 1px solid var(--primary); 
+            color: var(--primary); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.4); 
+            transition: 0.2s; margin-top: 10px; user-select: none; touch-action: manipulation;
+        }
+        .admin-btn-inline:hover, .admin-btn-inline:active { background: rgba(56, 189, 248, 0.1); transform: scale(0.98); }
+
+        .tools-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 10px; }
+        
+        input[type="text"], input[type="number"], input[type="password"], select, textarea { padding: 10px; border-radius: 8px; border: 1px solid #334155; background: rgba(15, 23, 42, 0.95); color: white; width: 100%; box-sizing: border-box; font-family: inherit; }
+        .search-bar { flex: 1; }
+        
+        button { 
+            padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; 
+            background: var(--primary); color: #0f172a; transition: 0.2s; user-select: none; 
+            touch-action: manipulation; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        button:hover, button:active { opacity: 0.9; transform: scale(0.98); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--success); color: #064e3b; }
+        .btn-warning { background: var(--warning); color: #0f172a; }
+        .btn-purple { background: #c084fc; color: #3b0764; }
+
+        /* Kategori & Produk */
+        .category-title { font-size: 1.1em; border-bottom: 2px solid #334155; padding-bottom: 5px; margin-top: 30px; display: flex; align-items: center; color: var(--primary); }
+        .category-slider { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 15px; padding: 15px 0 25px 0; scroll-snap-type: x mandatory; }
+        .category-slider::-webkit-scrollbar { height: 6px; }
+        .category-slider::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        
+        .product-card { flex: 0 0 auto; width: 150px; background: rgba(30, 41, 59, 0.95); border-radius: 12px; padding: 12px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.5); scroll-snap-align: start; border: 1px solid #334155; }
+        .product-card img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; background: #334155; margin-bottom: 8px; }
+        .product-title { font-size: 0.95em; color: var(--text-main); font-weight: 600; margin: 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .product-price { font-size: 1.1em; color: var(--success); font-weight: bold; margin: 5px 0; }
+        .product-stock { font-size: 0.75em; background: #0f172a; padding: 4px 10px; border-radius: 12px; display: inline-block; color: #cbd5e1; margin: 5px 0 10px 0; }
+        .btn-add { width: 100%; background: var(--success); color: #064e3b; padding: 8px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; }
+
+        /* FITUR BARU: Sticky Notes Tim */
+        .sticky-note { background: #fef08a; color: #1e293b; padding: 15px; border-radius: 8px; box-shadow: 2px 4px 10px rgba(0,0,0,0.3); position: relative; border-left: 6px solid #ca8a04; min-height: 100px; display: flex; flex-direction: column; justify-content: space-between;}
+        .sticky-note .delete-note { position: absolute; top: 4px; right: 4px; background: transparent; color: #ef4444; border: none; cursor: pointer; font-weight: bold; font-size: 1.1em; padding: 5px; }
+        .sticky-note .delete-note:hover { transform: scale(1.1); color: #dc2626; }
+        .sticky-note-date { font-size: 0.75em; color: #a16207; margin-top: 15px; text-align: right; border-top: 1px dashed #ca8a04; padding-top: 5px; }
+
+        /* Floating Buttons */
+        .gear-icon { display: inline-block; animation: spin 4s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        .floating-cart-btn { display: none; position: fixed; bottom: 20px; left: 20px; background: rgba(30, 41, 59, 0.95); border: 1px solid var(--primary); color: var(--primary); padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 1em; cursor: pointer; z-index: 100; display: flex; align-items: center; gap: 8px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); animation: pulse-cart 1.5s infinite alternate; transition: 0.3s; user-select: none; }
+        .floating-cart-btn:hover { transform: scale(1.05); }
+        @keyframes pulse-cart { from { box-shadow: 0 0 5px rgba(56, 189, 248, 0.3); } to { box-shadow: 0 0 15px rgba(56, 189, 248, 0.5); } }
+
+        /* Sinkronisasi Animasi & Alert */
+        #sync-overlay { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); z-index: 99999; flex-direction: column; align-items: center; justify-content: center; color: var(--primary); }
+        .cloud-sync-icon { animation: bounce 1s infinite alternate; margin-bottom: 20px; filter: drop-shadow(0 0 10px var(--primary)); }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-15px); } }
+
+        .custom-alert-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; }
+        .custom-alert-box { background: var(--card-bg); padding: 30px; border-radius: 20px; text-align: center; width: 85%; max-width: 350px; box-shadow: 0 15px 35px rgba(0,0,0,0.8); border: 1px solid #334155; animation: popInAlert 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popInAlert { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .alert-icon { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+        .icon-success { background: rgba(74, 222, 128, 0.2); color: var(--success); border: 3px solid var(--success); animation: scaleUp 0.5s ease-out; }
+        .icon-warning { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 3px solid var(--danger); animation: shake 0.5s; }
+        .icon-payment { background: rgba(56, 189, 248, 0.2); color: var(--primary); border: 3px solid var(--primary); animation: spinCoin 1s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .icon-loading { background: transparent; border: 4px solid rgba(56, 189, 248, 0.2); border-top: 4px solid var(--primary); animation: spin 1s linear infinite; }
+        @keyframes scaleUp { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 50% { transform: translateX(10px); } 75% { transform: translateX(-10px); } }
+        @keyframes spinCoin { 0% { transform: rotateY(0deg) scale(0); } 100% { transform: rotateY(360deg) scale(1); } }
+        .alert-actions { display: flex; gap: 10px; margin-top: 25px; justify-content: center; }
+        .alert-actions button { flex: 1; padding: 12px; font-size: 1em; }
+
+        /* Login Animasi */
+        .login-avatar-container { position: relative; width: 70px; height: 70px; margin: 0 auto 20px auto; }
+        .login-spinner-ring { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 3px solid transparent; border-top: 3px solid var(--primary); border-right: 3px solid var(--primary); border-radius: 50%; animation: spin 2s linear infinite; box-sizing: border-box; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
+        .login-spinner-ring.fast { animation: spin 0.5s linear infinite; border-color: transparent var(--success) var(--success) transparent; box-shadow: 0 0 15px rgba(74, 222, 128, 0.4);}
+        .login-lock-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; color: var(--primary); }
+
+        /* Modals Dasar */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 200; overflow-y: auto; }
+        .modal-content { background: rgba(30, 41, 59, 0.98); margin: 5% auto; padding: 20px; border-radius: 12px; width: 90%; max-width: 600px; color: var(--text-main); box-shadow: 0 10px 25px rgba(0,0,0,0.8); border: 1px solid #334155; }
+        .modal-content-small { max-width: 350px; text-align: center; margin-top: 15vh; }
+        .close { float: right; font-size: 28px; cursor: pointer; color: var(--danger); transition: 0.2s; line-height: 1; }
+        .close:hover { transform: scale(1.2); }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--primary); font-size: 0.9em; }
+
+        .filter-container { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 10px; margin-bottom: 15px; }
+        .filter-container::-webkit-scrollbar { height: 4px; }
+        .filter-container::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+        .filter-chip { background: #334155; color: white; padding: 6px 12px; border-radius: 15px; white-space: nowrap; font-size: 0.85em; border: none; cursor: pointer; }
+        .filter-chip.active { background: var(--primary); color: #0f172a; font-weight: bold; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.9em; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
+        .cart-summary { background: #0f172a; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #334155;}
+        
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 1000; }
+        .toast { background: var(--success); color: #064e3b; padding: 12px 18px; font-weight: bold; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.5); animation: fadeIn 0.3s, fadeOut 0.3s 1.7s; display: flex; align-items: center; gap: 8px; }
+        @keyframes fadeIn { from {opacity: 0; transform: translateX(20px);} to {opacity: 1; transform: translateX(0);} }
+        @keyframes fadeOut { from {opacity: 1;} to {opacity: 0;} }
+
+        /* Styling Form Multiple Produk */
+        .new-product-item { border: 1px dashed #38bdf8; padding: 15px; border-radius: 8px; margin-bottom: 15px; position: relative; background: #0f172a; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+        /* Chart Canvas Container */
+        .chart-container { background: #0f172a; padding: 15px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 20px; box-shadow: inset 0 4px 10px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+    <!-- CANVAS BACKGROUND ANIMASI DIGITAL -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- SINKRONISASI API LOADER -->
+    <div id="sync-overlay">
+        <div class="cloud-sync-icon">
+            <svg class="svg-icon" width="54" height="54" viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 3 16.3"></path><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line></svg>
+        </div>
+        <h2 style="margin:0;">Menghubungkan Database...</h2>
+        <p style="color:var(--text-muted);">Mengambil data dari GitHub API / Cache Lokal</p>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <!-- CUSTOM ANIMATED ALERT OVERLAY -->
+    <div id="customAlert" class="custom-alert-overlay">
+        <div class="custom-alert-box">
+            <div id="alert-icon" class="alert-icon"></div>
+            <h2 id="alert-title" style="margin: 0 0 10px 0;">Judul</h2>
+            <p id="alert-desc" style="color: var(--text-muted); margin: 0; font-size: 0.95em;">Deskripsi</p>
+            <div class="alert-actions" id="alert-actions"></div>
+        </div>
+    </div>
+
+    <!-- Floating Cart -->
+    <div id="floatingCartBtn" class="floating-cart-btn" onclick="openModal('cartModal')">
+        <svg class="svg-icon" width="20" height="20" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        <span style="font-size: 0.9em; font-weight: bold;" id="float-cart-count">0</span>
+    </div>
+
+    <!-- Profile Section -->
+    <div class="profile-container">
+        <img id="display-pic" class="profile-pic" src="https://via.placeholder.com/150" alt="Profile">
+        <h1 id="display-name" style="margin:10px 0;">Nama Anda</h1>
+        
+        <div id="clock-container"><span class="glow-dot-green"></span><span id="clock">Memuat waktu...</span></div>
+        
+        <!-- FITUR DOMPET ELEGAN -->
+        <div id="wallet-container">
+            <span class="saldo-label">Total saldo:</span> <span id="wallet-balance" style="color: var(--success);">Rp 0</span>
+        </div>
+        
+        <!-- TOMBOL ADMIN INLINE -->
+        <div>
+            <div class="admin-btn-inline" onclick="openLoginModal()">
+                <svg class="svg-icon gear-icon" width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                Akses Admin Panel
+            </div>
+        </div>
+    </div>
+
+    <!-- Tools -->
+    <div class="tools-header">
+        <div class="search-bar"><input type="text" id="searchInput" placeholder="Cari nama produk / kategori..." oninput="renderProducts()"></div>
+        <button onclick="openModal('cartModal')">
+            <svg class="svg-icon" width="16" height="16" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            Kasir (<span id="cart-count">0</span>)
+        </button>
+    </div>
+
+    <!-- Container Produk -->
+    <div id="product-container"></div>
+
+    <!-- Tampilan Public Kasbon -->
+    <div id="public-debt-container" style="margin-top: 40px; margin-bottom: 60px; padding: 20px; background: rgba(30, 41, 59, 0.95); border-radius: 15px; box-shadow: 0 6px 12px rgba(0,0,0,0.5); border-top: 3px solid var(--danger);">
+        <h3 style="color: var(--danger); text-align: center; margin-top: 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <svg class="svg-icon" width="20" height="20" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            Daftar Kasbon Aktif
+        </h3>
+        <div id="public-debt-list"></div>
+    </div>
+
+    <!-- LOGIN MODAL -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content modal-content-small">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2 style="margin-top:0; color:var(--primary);">Akses Admin</h2>
+            <div class="login-avatar-container">
+                <div id="login-ring" class="login-spinner-ring"></div>
+                <div class="login-lock-icon">
+                    <svg class="svg-icon" width="26" height="26" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </div>
+            </div>
+            <p id="login-status-text" style="font-size: 0.85em; color: var(--text-muted); margin-bottom: 20px;">Menunggu sandi...</p>
+            <div class="form-group" style="text-align: center;">
+                <input type="password" id="admin-pass" placeholder="Masukkan Password" style="width: 75%; margin: 0 auto; display: block; text-align: center; letter-spacing: 2px;">
+            </div>
+            <button id="btn-login" style="width: 75%; padding: 12px;" onclick="processLogin()">Masuk Panel</button>
+        </div>
+    </div>
+
+    <!-- CART MODAL -->
+    <div id="cartModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('cartModal')">&times;</span>
+            <h2>Kasir Belanja</h2>
+            <div id="cart-items"></div>
+            <div class="cart-summary">
+                <p>Total Tagihan: <strong id="cart-total" style="font-size:1.5em; color:var(--primary);">Rp 0</strong></p>
+                <div class="form-group">
+                    <label>Pembayaran Tunai (Rp):</label>
+                    <input type="number" id="cashInput" oninput="calculateChange()">
+                </div>
+                <p>Kembalian: <strong id="changeOutput" style="color:var(--success);">Rp 0</strong></p>
+                <button class="btn-success" style="width: 100%; margin-top: 10px; padding: 12px; font-size: 1.1em;" onclick="checkout()">
+                    <svg class="svg-icon" width="20" height="20" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+                    Bayar Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN MODAL -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('adminModal')">&times;</span>
+            <h2>Panel Admin</h2>
+            
+            <div style="display:flex; gap:10px; margin-bottom: 20px; flex-wrap:wrap; font-size: 0.9em;">
+                <button onclick="showAdminTab('profile')">Profil & Pengaturan</button>
+                <button onclick="showAdminTab('product')">Tambah Produk</button>
+                <button onclick="showAdminTab('manage')">Kelola Data</button>
+                <button onclick="showAdminTab('report')">Laporan & Statistik</button>
+                <button onclick="showAdminTab('hutang')" style="background: var(--danger); color: #fff;">
+                    <svg class="svg-icon" width="15" height="15" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> Catat Hutang
+                </button>
+                <button onclick="showAdminTab('rusak')" style="background: #a855f7; color: #fff;">
+                    <svg class="svg-icon" width="15" height="15" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> Barang Rusak
+                </button>
+                <!-- FITUR BARU: TOMBOL CATATAN TIM -->
+                <button onclick="showAdminTab('catatan')" style="background: #eab308; color: #0f172a;">
+                    <svg class="svg-icon" width="15" height="15" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Catatan Tim
+                </button>
+                <button onclick="showAdminTab('database')" style="background: var(--warning); color: #0f172a;">
+                    <svg class="svg-icon" width="15" height="15" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M21 19c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14"></path><path d="M21 5v14"></path></svg> Database API
+                </button>
+            </div>
+
+            <!-- TAB 1: PROFIL, SANDI & SALDO MANUAL -->
+            <div id="tab-profile" style="display:none;">
+                <h3>Edit Profil</h3>
+                <div class="form-group"><label>Link Foto Profil:</label><input type="text" id="edit-pic"></div>
+                <div class="form-group"><label>Nama:</label><input type="text" id="edit-name"></div>
+                
+                <hr style="border: 1px solid #334155; margin: 25px 0;">
+                
+                <h3 style="color: var(--success);">Koreksi Saldo Manual</h3>
+                <div class="form-group">
+                    <label>Ubah Total Saldo (Kosongkan agar hitung otomatis dari transaksi):</label>
+                    <input type="number" id="edit-saldo" placeholder="Otomatis berdasarkan laporan">
+                </div>
+
+                <hr style="border: 1px solid #334155; margin: 25px 0;">
+
+                <h3 style="color: var(--warning);">Pengaturan Keamanan & Performa</h3>
+                
+                <!-- FITUR BARU: OPSI HEMAT DATA & BATERAI -->
+                <div class="form-group">
+                    <label>Mode Hemat Data & Baterai (Mematikan animasi berat & Lazy Load Gambar):</label>
+                    <select id="edit-data-saver">
+                        <option value="false">Mati (Animasi Penuh & Responsif)</option>
+                        <option value="true">Aktif (Sangat Hemat Kuota & Baterai)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Akses Password Panel Admin:</label>
+                    <select id="edit-use-password">
+                        <option value="true">Pakai Password (Aman)</option>
+                        <option value="false">Tanpa Password (Langsung Masuk)</option>
+                    </select>
+                </div>
+
+                <div class="form-group"><label>Password Lama:</label><input type="password" id="old-pass" placeholder="Masukkan password saat ini"></div>
+                <div class="form-group"><label>Password Baru:</label><input type="password" id="new-pass" placeholder="Buat password baru"></div>
+                
+                <hr style="border: 1px solid #334155; margin: 30px 0;">
+                <button class="btn-success" style="width:100%; padding: 15px; font-size: 1.1em; box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="saveAllSettings()">
+                    <svg class="svg-icon" width="20" height="20" viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 3 16.3"></path><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line></svg>
+                    Simpan Semua ke Database
+                </button>
+            </div>
+
+            <!-- TAB 2: TAMBAH PRODUK -->
+            <div id="tab-product" style="display:none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; padding-bottom: 10px; margin-bottom: 20px;">
+                    <h3 style="margin: 0;">Tambah Produk Massal</h3>
+                    <button class="btn-success" style="padding: 6px 12px; font-size: 0.85em;" onclick="addMoreProductForm()">+ Tambah Baris</button>
+                </div>
+                <div id="new-products-container"></div>
+                <div style="padding: 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid var(--primary); border-radius: 8px; margin-top: 15px; color: var(--primary); font-size: 0.85em; text-align: center;">
+                    ℹ️ Anda bisa menambahkan banyak produk sekaligus. Setelah selesai, klik tombol <b>Simpan ke Katalog Sementara</b> di bawah, lalu klik <b>Simpan Semua ke Database</b> di tab Profil.
+                </div>
+                <button onclick="saveMultipleProducts()" style="width: 100%; margin-top: 15px; padding: 12px; font-size: 1.05em;">
+                    <svg class="svg-icon" width="18" height="18" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Simpan ke Katalog Sementara
+                </button>
+            </div>
+
+            <!-- TAB 3: KELOLA DATA -->
+            <div id="tab-manage" style="display:none;">
+                <h3>Kelola Produk (Stok & Harga)</h3>
+                
+                <div class="search-bar" style="margin-bottom: 15px;">
+                    <input type="text" id="searchAdminProduct" placeholder="Cari cepat nama / kategori produk..." oninput="renderAdminProducts()">
+                </div>
+
+                <div id="admin-product-list" style="overflow-x:auto; margin-bottom: 20px;"></div>
+                <div style="padding: 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid var(--primary); border-radius: 8px; color: var(--primary); font-size: 0.85em; text-align: center;">
+                    ℹ️ Ubah nilai Stok & Harga di atas, lalu klik <b>Simpan Semua ke Database</b> di tab <b>Profil & Pengaturan</b>.
+                </div>
+            </div>
+
+            <!-- TAB 4: LAPORAN & STATISTIK GRAFIK -->
+            <div id="tab-report" style="display:none;">
+                <h3>Laporan Keuangan & Statistik</h3>
+                <div class="filter-container" id="report-filters">
+                    <button class="filter-chip active" onclick="setFilter('semua', this)">Semua Waktu</button>
+                    <button class="filter-chip" onclick="setFilter('hari', this)">Hari Ini</button>
+                    <button class="filter-chip" onclick="setFilter('bulan', this)">Bulan Ini</button>
+                    <button class="filter-chip" onclick="setFilter('tahun', this)">Tahun Ini</button>
+                </div>
+
+                <!-- Canvas untuk Grafik Animasi Chart.js -->
+                <div class="chart-container">
+                    <canvas id="salesChart"></canvas>
+                </div>
+
+                <div class="cart-summary">
+                    <p>Total Transaksi: <span id="rep-count">0</span></p>
+                    <p>Total Omset: <span id="rep-omset" style="color:var(--primary);">Rp 0</span></p>
+                    <p>Total Laba: <span id="rep-laba" style="color:var(--success);">Rp 0</span></p>
+                    
+                    <p style="border-top: 1px dashed #334155; padding-top: 10px; margin-top: 10px;">
+                        Total Laba Dikurang Kerugian: <strong id="rep-rugi-text" style="color:var(--warning); font-size: 1.1em;">Rp 0</strong>
+                    </p>
+
+                    <button class="btn-success" style="margin-top:10px; width:100%; display:flex; justify-content:center; align-items:center; gap:8px;" onclick="sendRecapWA()">
+                        <svg class="svg-icon" width="18" height="18" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        Rekap & Kirim WhatsApp
+                    </button>
+                </div>
+
+                <hr style="border: 1px solid #334155; margin: 30px 0;">
+                <h3 style="color: var(--primary); display:flex; align-items:center; gap:8px;">
+                    <svg class="svg-icon" width="20" height="20" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    Statistik Lanjutan
+                </h3>
+                <div class="filter-container" id="advanced-filters">
+                    <button class="filter-chip active" onclick="setAdvancedFilter('hari', this)">Hari Ini</button>
+                    <button class="filter-chip" onclick="setAdvancedFilter('7hari', this)">7 Hari</button>
+                    <button class="filter-chip" onclick="setAdvancedFilter('bulan', this)">Bulan Ini</button>
+                    <button class="filter-chip" onclick="setAdvancedFilter('3bulan', this)">3 Bulan</button>
+                    <button class="filter-chip" onclick="setAdvancedFilter('6bulan', this)">6 Bulan</button>
+                    <button class="filter-chip" onclick="setAdvancedFilter('1tahun', this)">1 Tahun</button>
+                    <button class="filter-chip" onclick="setAdvancedFilter('semua', this)">Semua</button>
+                </div>
+                
+                <h4 style="margin-top: 15px; color: var(--text-main); display:flex; align-items:center; gap:8px;">
+                    <svg class="svg-icon" width="18" height="18" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    Penjualan per Kategori
+                </h4>
+                <div id="category-sales-list" style="margin-bottom: 25px;"></div>
+                
+                <h4 style="margin-top: 25px; color: var(--warning); display:flex; align-items:center; gap:8px;">
+                    <svg class="svg-icon" width="18" height="18" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg>
+                    Top Barang Paling Laris
+                </h4>
+                <div id="top-products-list" style="margin-bottom: 25px;"></div>
+                
+                <hr style="border: 1px solid #334155; margin: 30px 0;">
+                <button class="btn-danger" style="margin-top:10px; width: 100%;" onclick="clearHistory()">Hapus Riwayat di Filter Laporan Utama</button>
+                <h4 style="margin-top:20px;">Riwayat Transaksi Lengkap</h4>
+                <div id="transaction-history" style="overflow-x:auto;"></div>
+            </div>
+
+            <!-- TAB 5: CATAT HUTANG -->
+            <div id="tab-hutang" style="display:none;">
+                <h3 style="color: var(--danger);">Pencatatan Hutang / Kasbon</h3>
+                <div class="cart-summary" style="margin-bottom: 15px; border-color: var(--danger);">
+                    <p>Total Semua Hutang Aktif: <strong id="total-hutang" style="color:var(--danger); font-size: 1.3em;">Rp 0</strong></p>
+                </div>
+                
+                <div class="form-group"><label>Nama Pelanggan:</label><input type="text" id="debt-name" placeholder="Misal: Budi (Akan diakumulasi jika nama sama)"></div>
+                <div class="form-group"><label>Produk / Keterangan (Opsional):</label><input type="text" id="debt-desc" placeholder="Misal: Rokok 1 bungkus"></div>
+                <div class="form-group"><label>Jumlah Tambahan Hutang (Rp):</label><input type="number" id="debt-amount" placeholder="Misal: 25000"></div>
+                <button onclick="addDebt()" style="width: 100%; margin-bottom: 20px; background: var(--danger); color: white;">
+                    <svg class="svg-icon" width="16" height="16" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Tambah / Update Hutang
+                </button>
+                
+                <h4>Daftar Hutang Aktif</h4>
+                <div id="debt-list" style="overflow-x:auto; margin-bottom: 30px;"></div>
+
+                <hr style="border: 1px solid #334155; margin: 25px 0;">
+                <h4 style="color: var(--success);">Riwayat Pembayaran Lunas</h4>
+                <div id="paid-debt-list" style="overflow-x:auto;"></div>
+            </div>
+
+            <!-- TAB 6: BARANG RUSAK -->
+            <div id="tab-rusak" style="display:none;">
+                <h3 style="color: #c084fc; display:flex; align-items:center; gap:8px;">
+                    <svg class="svg-icon" width="20" height="20" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    Pencatatan Barang Rusak / Kadaluarsa
+                </h3>
+                <p style="font-size:0.85em; color:var(--text-muted);">Mencatat barang rusak otomatis mengurangi stok utama tanpa menambah penjualan.</p>
+                
+                <div class="cart-summary" style="margin-bottom: 15px; border-color: #c084fc;">
+                    <p>Total Kerugian Modal: <strong id="total-rugi" style="color:var(--danger); font-size: 1.3em;">Rp 0</strong></p>
+                </div>
+
+                <div class="form-group">
+                    <label>Pilih Produk (Katalog Saat Ini):</label>
+                    <select id="dmg-product" style="background:#1e293b;"></select>
+                </div>
+                <div class="form-group"><label>Jumlah Rusak:</label><input type="number" id="dmg-qty" placeholder="Jumlah barang"></div>
+                <div class="form-group"><label>Keterangan:</label><input type="text" id="dmg-note" placeholder="Misal: Jatuh pecah, Expired"></div>
+                <button class="btn-purple" style="width: 100%; margin-bottom: 20px; font-weight:bold;" onclick="addDamaged()">Catat & Kurangi Stok</button>
+                
+                <h4>Riwayat Barang Rusak</h4>
+                <div id="damaged-list" style="overflow-x:auto;"></div>
+                <div style="padding: 10px; background: rgba(168, 85, 247, 0.1); border: 1px solid #c084fc; border-radius: 8px; margin-top: 15px; color: #c084fc; font-size: 0.85em; text-align: center;">
+                    ℹ️ Jangan lupa klik <b>Simpan Semua ke Database</b> di tab Profil agar perubahan stok tersimpan ke cloud.
+                </div>
+            </div>
+
+            <!-- FITUR BARU: TAB CATATAN TIM (TASK BOARD) -->
+            <div id="tab-catatan" style="display:none;">
+                <h3 style="color: #eab308; display:flex; align-items:center; gap:8px;">
+                    <svg class="svg-icon" width="22" height="22" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    Papan Catatan & Pengingat Tim
+                </h3>
+                <p style="font-size: 0.85em; color: var(--text-muted);">Gunakan untuk mencatat stok belanjaan, jadwal tugas, atau tinggalkan pesan untuk rekan admin lainnya.</p>
+                
+                <div class="form-group">
+                    <textarea id="new-note-text" rows="3" placeholder="Tuliskan catatan / tugas baru di sini..."></textarea>
+                </div>
+                <button onclick="addNote()" style="width: 100%; background: #eab308; color: #0f172a; font-weight: bold; margin-bottom: 25px;">+ Tempel Catatan Baru</button>
+                
+                <div id="notes-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div>
+            </div>
+
+            <!-- TAB 7: DATABASE API -->
+            <div id="tab-database" style="display:none;">
+                <h3 style="color: var(--warning);">Pengaturan Database (GitHub API)</h3>
+                <p style="font-size: 0.85em; color: var(--text-muted);">Masukkan Token dan ID Gist GitHub Anda untuk menyimpan data secara permanen ke Cloud.</p>
+                <div class="form-group"><label>GitHub Personal Access Token (PAT):</label><input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxx..."></div>
+                <div class="form-group"><label>GitHub Gist ID:</label><input type="text" id="gh-gist" placeholder="Misal: 7a8b9c0d1e2f3g4h5i6j..."></div>
+                <button onclick="saveDatabaseConfig()" style="width:100%; background: var(--warning); color: #0f172a; margin-top: 10px;">
+                    <svg class="svg-icon" width="16" height="16" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Simpan Konfigurasi & Sinkronisasi API
+                </button>
+                <div id="api-status" style="margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; background: #334155;">
+                    Status: <span style="color: var(--text-muted);">Menunggu Konfigurasi...</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 0. INIT PWA OFFLINE (WEB MANIFEST & SERVICE WORKER) - FITUR BARU
+        // ==========================================
+        function initPWA() {
+            // Injeksi Web Manifest secara dinamis
+            const manifest = {
+                name: "Sistem Kasir & Portofolio",
+                short_name: "KasirPro",
+                start_url: window.location.pathname,
+                display: "standalone",
+                background_color: "#0f172a",
+                theme_color: "#38bdf8",
+                icons: [{ src: "https://via.placeholder.com/192", sizes: "192x192", type: "image/png" }]
+            };
+            const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            const manifestURL = URL.createObjectURL(manifestBlob);
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestURL;
+            document.head.appendChild(link);
+
+            // Mendaftarkan Service Worker jika ada file sw.js
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('✅ PWA & Mode Offline diaktifkan.'))
+                .catch(err => console.log('ℹ️ PWA siap, pastikan meletakkan file sw.js di folder yang sama untuk full offline.'));
+            }
+        }
+
+        // ==========================================
+        // 1. ANIMASI BACKGROUND DIGITAL CANVAS (TERMASUK FITUR HEMAT DATA)
+        // ==========================================
+        function initDigitalBackground() {
+            const canvas = document.getElementById('bg-canvas');
+            const ctx = canvas.getContext('2d', { alpha: false }); 
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            const particles = [];
+            const particleCount = Math.min(Math.floor((width * height) / 15000), 45);
+
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    radius: Math.random() * 1.5 + 1
+                });
+            }
+
+            function animate() {
+                // FITUR BARU: Bypass Animasi jika Mode Hemat Baterai Aktif
+                if(profileData && profileData.dataSaver === true) {
+                    ctx.fillStyle = '#0f172a'; // Hanya render warna gelap solid
+                    ctx.fillRect(0, 0, width, height);
+                    setTimeout(() => requestAnimationFrame(animate), 2000); // Super hemat CPU (0.5 FPS)
+                    return;
+                }
+
+                let gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
+                gradient.addColorStop(0, '#1e293b');
+                gradient.addColorStop(1, '#0f172a');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.8)';
+                
+                for (let i = 0; i < particles.length; i++) {
+                    let p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x < 0 || p.x > width) p.vx *= -1;
+                    if (p.y < 0 || p.y > height) p.vy *= -1;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    for (let j = i + 1; j < particles.length; j++) {
+                        let p2 = particles[j];
+                        let dx = p.x - p2.x;
+                        let dy = p.y - p2.y;
+                        
+                        let distSq = dx * dx + dy * dy;
+                        if (distSq < 14400) { 
+                            let dist = Math.sqrt(distSq);
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.strokeStyle = `rgba(56, 189, 248, ${0.15 * (1 - dist / 120)})`;
+                            ctx.lineWidth = 0.6;
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // ==========================================
+        // 2. DATA & VARIABEL GLOBAL (TERMASUK DATA BARU)
+        // ==========================================
+        // FITUR BARU: Tambah default dataSaver dan Array Notes
+        let profileData = { name: 'Nama Anda', pic: 'https://via.placeholder.com/150', customSaldo: '', usePassword: true, dataSaver: false };
+        let products = [];
+        let transactions = [];
+        let debts = []; 
+        let paidDebts = []; 
+        let damagedGoods = []; 
+        let notes = []; 
+        let adminPassData = localStorage.getItem('adminPassword') || '061204'; 
+        
+        let cart = []; let clickCounts = {}; let filteredTransactions = []; 
+        let currentFilterType = 'semua'; 
+        let currentAdvancedFilterType = 'hari'; 
+
+        const rp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(num);
+
+        let GITHUB_TOKEN = localStorage.getItem('gh_token') || '';
+        let GIST_ID = localStorage.getItem('gist_id') || '';
+
+        let salesChartInstance = null;
+
+        // ==========================================
+        // 3. SISTEM DATABASE GITHUB API & LOKAL
+        // ==========================================
+        async function fetchFromGitHubAPI() {
+            if(!GITHUB_TOKEN || !GIST_ID) { loadLocalFallback(); document.getElementById('sync-overlay').style.display = 'none'; return; }
+            try {
+                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, { headers: { 'Authorization': `token ${GITHUB_TOKEN}` } });
+                if(!response.ok) throw new Error("Gagal akses API");
+                const data = await response.json();
+                if(data.files && data.files['database.json']) {
+                    const content = JSON.parse(data.files['database.json'].content);
+                    profileData = content.profileData || profileData;
+                    products = content.products || [];
+                    transactions = content.transactions || [];
+                    debts = content.debts || [];
+                    paidDebts = content.paidDebts || [];
+                    damagedGoods = content.damagedGoods || [];
+                    notes = content.notes || []; // FITUR BARU: Ambil notes dari cloud
+                    
+                    saveAllToLocal();
+                    updateStatusDatabase(true, "Terhubung ke GitHub Cloud");
+                } else { throw new Error("File database.json tidak ditemukan."); }
+            } catch(e) {
+                console.error(e); loadLocalFallback();
+                updateStatusDatabase(false, "Gagal konek! Menggunakan LocalStorage");
+            }
+            document.getElementById('sync-overlay').style.display = 'none';
+        }
+
+        async function pushToGitHubAPI() {
+            if(!GITHUB_TOKEN || !GIST_ID) return true;
+            const payload = { profileData, products, transactions, debts, paidDebts, damagedGoods, notes }; // FITUR BARU: Sertakan notes
+            try {
+                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ files: { 'database.json': { content: JSON.stringify(payload, null, 2) } } })
+                });
+                if(!response.ok) throw new Error("Gagal Push");
+                return true;
+            } catch(e) { console.error(e); return false; }
+        }
+
+        function loadLocalFallback() {
+            profileData = JSON.parse(localStorage.getItem('profileData')) || profileData;
+            if(profileData.dataSaver === undefined) profileData.dataSaver = false;
+            products = JSON.parse(localStorage.getItem('products')) || products;
+            transactions = JSON.parse(localStorage.getItem('transactions')) || transactions;
+            debts = JSON.parse(localStorage.getItem('debts')) || debts;
+            paidDebts = JSON.parse(localStorage.getItem('paidDebts')) || paidDebts;
+            damagedGoods = JSON.parse(localStorage.getItem('damagedGoods')) || damagedGoods;
+            notes = JSON.parse(localStorage.getItem('notes')) || notes;
+            updateStatusDatabase(false, "Menggunakan LocalStorage (Browser Only)");
+        }
+        
+        function saveAllToLocal() {
+            localStorage.setItem('profileData', JSON.stringify(profileData));
+            localStorage.setItem('products', JSON.stringify(products));
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            localStorage.setItem('debts', JSON.stringify(debts));
+            localStorage.setItem('paidDebts', JSON.stringify(paidDebts));
+            localStorage.setItem('damagedGoods', JSON.stringify(damagedGoods));
+            localStorage.setItem('notes', JSON.stringify(notes));
+        }
+
+        function saveDatabaseConfig() {
+            const token = document.getElementById('gh-token').value.trim();
+            const gist = document.getElementById('gh-gist').value.trim();
+            if(!token || !gist) return alert('Token dan Gist ID wajib diisi!');
+            
+            localStorage.setItem('gh_token', token); localStorage.setItem('gist_id', gist);
+            GITHUB_TOKEN = token; GIST_ID = gist;
+            document.getElementById('sync-overlay').style.display = 'flex';
+            fetchFromGitHubAPI().then(() => {
+                initUI(); showAnimAlert('success', 'Database Tersambung!', 'Web terhubung dengan Cloud.');
+            });
+        }
+
+        function updateStatusDatabase(isConnected, msg) {
+            const statusDiv = document.getElementById('api-status');
+            if(statusDiv) statusDiv.innerHTML = `Status: <span style="color: ${isConnected ? 'var(--success)' : 'var(--danger)'};">${msg}</span>`;
+        }
+
+        // ==========================================
+        // 4. INIT APP & UI
+        // ==========================================
+        async function initApp() {
+            initPWA(); // FITUR BARU: Jalankan Offline Service Worker Setup
+            initDigitalBackground();
+            document.getElementById('gh-token').value = GITHUB_TOKEN;
+            document.getElementById('gh-gist').value = GIST_ID;
+            await fetchFromGitHubAPI();
+            initUI(); setInterval(updateClock, 1000); updateClock();
+        }
+
+        function initUI() {
+            updateProfileUI(); renderProducts(); updateWalletUI(); renderPublicDebts();
+            document.getElementById('new-products-container').innerHTML = '';
+            addMoreProductForm(); 
+        }
+
+        function updateWalletUI() {
+            const autoBalance = transactions.reduce((sum, tx) => sum + tx.total, 0);
+            const finalBalance = (profileData.customSaldo !== undefined && profileData.customSaldo !== null && profileData.customSaldo !== '') 
+                ? parseInt(profileData.customSaldo) : autoBalance;
+                
+            const walletEl = document.getElementById('wallet-balance');
+            if(walletEl) walletEl.innerText = rp(finalBalance);
+        }
+
+        function showAnimAlert(type, title, desc, onConfirm = null, onCancel = null) {
+            const overlay = document.getElementById('customAlert'); const icon = document.getElementById('alert-icon');
+            const titleEl = document.getElementById('alert-title'); const descEl = document.getElementById('alert-desc');
+            const actions = document.getElementById('alert-actions');
+            overlay.style.display = 'flex'; titleEl.innerText = title; descEl.innerHTML = desc; actions.innerHTML = '';
+
+            if (type === 'success') {
+                icon.className = 'alert-icon icon-success'; 
+                icon.innerHTML = '<svg class="svg-icon" width="36" height="36" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                actions.innerHTML = `<button class="btn-success" onclick="closeAnimAlert()">Selesai</button>`;
+            } else if (type === 'payment') {
+                icon.className = 'alert-icon icon-payment'; 
+                icon.innerHTML = '<svg class="svg-icon" width="36" height="36" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>';
+                actions.innerHTML = `<button class="btn-success" onclick="closeAnimAlert()">Tutup Kasir</button>`;
+            } else if (type === 'warning') {
+                icon.className = 'alert-icon icon-warning'; 
+                icon.innerHTML = '<svg class="svg-icon" width="36" height="36" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+                const btnCancel = document.createElement('button'); btnCancel.className = 'btn-danger'; btnCancel.innerText = 'Batal'; btnCancel.onclick = () => { closeAnimAlert(); if(onCancel) onCancel(); };
+                const btnOk = document.createElement('button'); btnOk.className = 'btn-success'; btnOk.innerText = 'Setuju'; btnOk.onclick = () => { closeAnimAlert(); if(onConfirm) onConfirm(); };
+                actions.appendChild(btnCancel); actions.appendChild(btnOk);
+            } else if (type === 'loading') {
+                icon.className = 'alert-icon icon-loading'; icon.innerHTML = ''; actions.innerHTML = ''; 
+            }
+        }
+        function closeAnimAlert() { document.getElementById('customAlert').style.display = 'none'; }
+
+        function updateClock() {
+            const now = new Date(); const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+            document.getElementById('clock').innerText = `${timeStr} | ${dateStr}`;
+        }
+
+        function updateProfileUI() {
+            document.getElementById('display-name').innerText = profileData.name;
+            document.getElementById('display-pic').src = profileData.pic;
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('product-container');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            container.innerHTML = '';
+            const categories = [...new Set(products.map(p => p.category))];
+            
+            categories.forEach(cat => {
+                const matchCatGlobal = cat.toLowerCase().includes(search);
+                const catProducts = products.filter(p => p.category === cat && (p.name.toLowerCase().includes(search) || matchCatGlobal));
+                
+                if(catProducts.length === 0) return;
+
+                container.innerHTML += `<div class="category-title"><span class="glow-dot-blue"></span>${cat}</div>`;
+                let slider = `<div class="category-slider">`;
+                catProducts.forEach(p => {
+                    // FITUR BARU: Terapkan Lazy Load gambar jika Data Saver aktif untuk hemat kuota internet
+                    const lazyAttr = (profileData && profileData.dataSaver === true) ? 'loading="lazy"' : '';
+                    
+                    slider += `
+                        <div class="product-card">
+                            <img src="${p.images[0]}" alt="${p.name}" ${lazyAttr}>
+                            <div class="product-title">${p.name}</div>
+                            <div class="product-price">${rp(p.price)}</div>
+                            <div class="product-stock">Sisa: ${p.stock}</div>
+                            <button class="btn-add" onclick="addToCart(${p.id})">Tambah</button>
+                        </div>`;
+                });
+                slider += `</div>`; container.innerHTML += slider;
+            });
+        }
+
+        // ==========================================
+        // 5. KASIR, BELANJA & MASTER SAVE
+        // ==========================================
+        function getCategoryOptions() {
+            const categories = [...new Set(products.map(p => p.category))];
+            let options = `<option value="">-- Pilih Kategori --</option>`;
+            categories.forEach(c => { options += `<option value="${c}">${c}</option>`; });
+            options += `<option value="NEW">+ Kategori Baru...</option>`;
+            return options;
+        }
+
+        function addMoreProductForm() {
+            const container = document.getElementById('new-products-container');
+            const formHTML = `
+                <div class="new-product-item">
+                    <button class="btn-danger" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.8em;" onclick="this.parentElement.remove()">X</button>
+                    <div class="form-group" style="padding-right: 30px;"><label>Link Foto (Url):</label><input type="text" class="add-img" placeholder="http://gambar.jpg"></div>
+                    <div class="form-group"><label>Nama Produk:</label><input type="text" class="add-name" placeholder="Misal: Kopi Hitam"></div>
+                    <div class="grid-3">
+                        <div class="form-group"><label>Harga:</label><input type="number" class="add-price"></div>
+                        <div class="form-group"><label>Modal:</label><input type="number" class="add-cost" value="0"></div>
+                        <div class="form-group"><label>Stok:</label><input type="number" class="add-stock"></div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Kategori:</label>
+                        <select class="add-category-select" onchange="toggleCategoryInput(this)">${getCategoryOptions()}</select>
+                        <input type="text" class="add-category-new" placeholder="Ketik Kategori Baru..." style="display: none; margin-top: 10px;">
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', formHTML);
+        }
+
+        function toggleCategoryInput(selectElem) {
+            const newCatInput = selectElem.nextElementSibling;
+            if (selectElem.value === 'NEW') { newCatInput.style.display = 'block'; newCatInput.focus(); } 
+            else { newCatInput.style.display = 'none'; newCatInput.value = ''; }
+        }
+
+        function saveMultipleProducts(silent = false) {
+            const items = document.querySelectorAll('.new-product-item');
+            let addedCount = 0; let errorCount = 0;
+
+            items.forEach((item) => {
+                const img = item.querySelector('.add-img').value.trim();
+                const name = item.querySelector('.add-name').value.trim();
+                const price = item.querySelector('.add-price').value;
+                const cost = item.querySelector('.add-cost').value;
+                const stock = item.querySelector('.add-stock').value;
+                const selectCat = item.querySelector('.add-category-select').value;
+                const newCat = item.querySelector('.add-category-new').value.trim();
+                
+                if (name && price) {
+                    let finalCat = 'Uncategorized';
+                    if (selectCat === 'NEW' && newCat) finalCat = newCat; else if (selectCat && selectCat !== 'NEW') finalCat = selectCat;
+
+                    products.push({
+                        id: Date.now() + Math.floor(Math.random() * 10000),
+                        images: [img || 'https://via.placeholder.com/200'],
+                        name: name, price: parseInt(price), cost: parseInt(cost || 0), 
+                        stock: parseInt(stock || 0), category: finalCat
+                    });
+                    addedCount++; item.remove(); 
+                } else if (name || price) { errorCount++; }
+            });
+
+            if (addedCount > 0) {
+                if(document.querySelectorAll('.new-product-item').length === 0) addMoreProductForm();
+                localStorage.setItem('products', JSON.stringify(products)); 
+                renderProducts(); renderAdminProducts();
+                document.querySelectorAll('.add-category-select').forEach(select => {
+                    const currentVal = select.value; select.innerHTML = getCategoryOptions(); select.value = currentVal;
+                });
+                if(!silent) showAnimAlert('success', 'Produk Masuk Katalog!', `<b>${addedCount}</b> produk ditambahkan.`);
+            } else if (!silent) {
+                if (errorCount > 0) showAnimAlert('warning', 'Input Batal', 'Pastikan Nama dan Harga diisi.');
+            }
+            return addedCount; 
+        }
+
+        function addToCart(id) {
+            const product = products.find(p => p.id === id);
+            if(product.stock <= 0) { showToast('Stok produk habis!'); return; }
+            const existing = cart.find(item => item.id === id);
+            if(existing) { if(existing.qty >= product.stock) { showToast('Melebihi sisa stok!'); return; } existing.qty++; } 
+            else cart.push({ ...product, qty: 1 });
+            clickCounts[id] = (clickCounts[id] || 0) + 1; showToast(`${product.name} ditambahkan!`);
+            updateCartCount(); renderCartUI();
+        }
+
+        function updateCartCount() { 
+            const count = cart.reduce((sum, item) => sum + item.qty, 0);
+            document.getElementById('cart-count').innerText = count; document.getElementById('float-cart-count').innerText = count;
+            document.getElementById('floatingCartBtn').style.display = count > 0 ? 'flex' : 'none';
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div'); toast.className = 'toast'; 
+            toast.innerHTML = `<svg class="svg-icon" width="16" height="16" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg> ${msg}`;
+            document.getElementById('toast-container').appendChild(toast); setTimeout(() => toast.remove(), 2000);
+        }
+
+        function renderCartUI() {
+            const container = document.getElementById('cart-items');
+            if(cart.length === 0) { container.innerHTML = '<p>Keranjang kosong.</p>'; return; }
+            let html = `<table><tr><th>Produk</th><th>Qty</th><th>Subtotal</th><th>X</th></tr>`;
+            let total = 0;
+            cart.forEach((item, index) => {
+                const sub = item.price * item.qty; total += sub;
+                html += `<tr><td>${item.name}</td><td><button style="padding:2px 5px;" onclick="changeQty(${index}, -1)">-</button> ${item.qty} <button style="padding:2px 5px;" onclick="changeQty(${index}, 1)">+</button></td><td>${rp(sub)}</td><td><button class="btn-danger" style="padding:5px;" onclick="removeFromCart(${index})">X</button></td></tr>`;
+            });
+            html += `</table>`; container.innerHTML = html;
+            document.getElementById('cart-total').innerText = rp(total); document.getElementById('cart-total').dataset.val = total; calculateChange();
+        }
+
+        function changeQty(index, amount) {
+            const item = cart[index]; const product = products.find(p => p.id === item.id);
+            if(amount === 1 && item.qty >= product.stock) { showToast('Kuantitas mentok stok!'); return; }
+            item.qty += amount; if(item.qty <= 0) cart.splice(index, 1);
+            updateCartCount(); renderCartUI();
+        }
+        function removeFromCart(index) { cart.splice(index, 1); updateCartCount(); renderCartUI(); }
+
+        function calculateChange() {
+            const total = parseInt(document.getElementById('cart-total').dataset.val || 0); const cash = parseInt(document.getElementById('cashInput').value || 0);
+            const change = cash - total;
+            document.getElementById('changeOutput').innerText = change >= 0 ? rp(change) : 'Uang Kurang!';
+            document.getElementById('changeOutput').style.color = change >= 0 ? 'var(--success)' : 'var(--danger)';
+        }
+
+        async function checkout() {
+            if(cart.length === 0) { showToast('Keranjang masih kosong!'); return; }
+            const total = parseInt(document.getElementById('cart-total').dataset.val); const cash = parseInt(document.getElementById('cashInput').value || 0);
+            if(cash < total) { showToast('Uang pembayaran tidak cukup!'); return; }
+
+            showAnimAlert('loading', 'Memproses...', 'Mengirim data ke Database...');
+            const now = new Date(); let totalProfit = 0;
+            cart.forEach(item => { const product = products.find(p => p.id === item.id); product.stock -= item.qty; totalProfit += (item.price - item.cost) * item.qty; });
+
+            transactions.push({ id: Date.now(), date: now.toLocaleString('id-ID'), items: [...cart], total: total, profit: totalProfit });
+            
+            if(profileData.customSaldo) { profileData.customSaldo = parseInt(profileData.customSaldo) + total; }
+
+            saveAllToLocal();
+
+            const isApiSuccess = await pushToGitHubAPI();
+            let changeAmount = rp(cash - total);
+            let changeText = (cash - total) > 0 ? `<br><br><span style="color:var(--success); font-size:1.4em; font-weight:bold;">Kembalian:<br>${changeAmount}</span>` : '<br><br><span style="color:var(--success); font-size:1.2em; font-weight:bold;">Uang Pas</span>';
+            let apiInfo = isApiSuccess ? '<br><small style="color:var(--primary);">Tersinkronisasi ke API</small>' : '<br><small style="color:var(--danger);">Tersimpan di Local saja</small>';
+
+            cart = []; clickCounts = {}; updateCartCount(); renderCartUI(); renderProducts(); renderAdminProducts();
+            updateWalletUI(); 
+            
+            document.getElementById('cashInput').value = ''; closeModal('cartModal'); 
+            showAnimAlert('payment', 'Pembayaran Sukses!', `Transaksi berhasil.${changeText}${apiInfo}`);
+        }
+
+        // ==========================================
+        // 6. ADMIN MODAL & TAB CONTROL
+        // ==========================================
+        function openModal(id) { 
+            document.getElementById(id).style.display = 'block'; 
+            document.body.classList.add('modal-open');
+        }
+        function closeModal(id) { 
+            document.getElementById(id).style.display = 'none'; 
+            document.body.classList.remove('modal-open');
+        }
+        
+        function showAdminTab(tab) {
+            ['profile', 'product', 'manage', 'report', 'hutang', 'rusak', 'catatan', 'database'].forEach(t => document.getElementById(`tab-${t}`).style.display = 'none');
+            document.getElementById(`tab-${tab}`).style.display = 'block';
+            
+            if(tab === 'report') { renderReports(); renderAdvancedStats(); }
+            if(tab === 'hutang') renderDebts();
+            if(tab === 'rusak') renderDamagedTab();
+            if(tab === 'catatan') renderNotes(); // FITUR BARU
+        }
+
+        function openLoginModal() {
+            if (profileData.usePassword === false || profileData.usePassword === 'false') {
+                document.getElementById('edit-name').value = profileData.name; 
+                document.getElementById('edit-pic').value = profileData.pic; 
+                document.getElementById('edit-saldo').value = profileData.customSaldo || '';
+                document.getElementById('edit-use-password').value = 'false';
+                
+                // Set default dropdown fitur baru
+                document.getElementById('edit-data-saver').value = profileData.dataSaver === true ? 'true' : 'false';
+                
+                renderAdminProducts();
+                openModal('adminModal'); 
+                showAdminTab('profile');
+                return;
+            }
+
+            openModal('loginModal'); 
+            document.getElementById('admin-pass').value = ''; 
+            document.getElementById('admin-pass').disabled = false;
+            document.getElementById('btn-login').disabled = false; 
+            document.getElementById('login-ring').className = 'login-spinner-ring';
+            document.getElementById('login-status-text').innerText = 'Menunggu sandi...'; 
+            document.getElementById('login-status-text').style.color = 'var(--text-muted)';
+        }
+
+        function processLogin() {
+            const pass = document.getElementById('admin-pass').value; const ring = document.getElementById('login-ring');
+            const status = document.getElementById('login-status-text'); const input = document.getElementById('admin-pass'); const btn = document.getElementById('btn-login');
+            input.disabled = true; btn.disabled = true; ring.className = 'login-spinner-ring fast'; status.innerText = 'Memverifikasi...'; status.style.color = 'var(--primary)';
+
+            setTimeout(() => {
+                if(pass === adminPassData) {
+                    status.innerText = 'Akses Diterima!'; status.style.color = 'var(--success)'; 
+                    document.getElementById('edit-name').value = profileData.name; 
+                    document.getElementById('edit-pic').value = profileData.pic; 
+                    document.getElementById('edit-saldo').value = profileData.customSaldo || '';
+                    document.getElementById('edit-use-password').value = (profileData.usePassword !== false) ? 'true' : 'false';
+                    
+                    document.getElementById('edit-data-saver').value = profileData.dataSaver === true ? 'true' : 'false';
+                    
+                    renderAdminProducts();
+                    setTimeout(() => { closeModal('loginModal'); openModal('adminModal'); showAdminTab('profile'); }, 500);
+                } else {
+                    status.innerText = 'Password Salah!'; status.style.color = 'var(--danger)'; ring.className = 'login-spinner-ring'; input.disabled = false; btn.disabled = false; input.value = ''; input.focus();
+                }
+            }, 1200);
+        }
+
+        async function saveAllSettings() {
+            let savedItems = []; let warnings = [];
+            showAnimAlert('loading', 'Menyimpan...', 'Menyinkronkan data ke Cloud API...');
+
+            profileData.name = document.getElementById('edit-name').value; 
+            profileData.pic = document.getElementById('edit-pic').value;
+            profileData.customSaldo = document.getElementById('edit-saldo').value;
+            
+            profileData.usePassword = (document.getElementById('edit-use-password').value === 'true');
+            
+            // FITUR BARU: Simpan Pengaturan Hemat Data
+            profileData.dataSaver = (document.getElementById('edit-data-saver').value === 'true');
+
+            savedItems.push('Profil, Saldo & Keamanan');
+
+            const oldP = document.getElementById('old-pass').value; const newP = document.getElementById('new-pass').value;
+            if (oldP || newP) {
+                if (oldP === adminPassData && newP.length >= 4) { adminPassData = newP; localStorage.setItem('adminPassword', adminPassData); document.getElementById('old-pass').value = ''; document.getElementById('new-pass').value = ''; savedItems.push('Password Admin'); } 
+                else { warnings.push('Password Gagal (Sandi lama salah/terpendek)'); }
+            }
+
+            let addedNewProds = saveMultipleProducts(true); 
+            if(addedNewProds > 0) savedItems.push(`Penambahan Produk Baru`);
+
+            let stockPriceChanged = false;
+            products.forEach((p, i) => {
+                const stockInput = document.getElementById(`stock-${i}`); const priceInput = document.getElementById(`price-${i}`);
+                if (stockInput && priceInput) { p.stock = parseInt(stockInput.value) || 0; p.price = parseInt(priceInput.value) || 0; stockPriceChanged = true; }
+            });
+            if (stockPriceChanged) savedItems.push('Stok & Harga Katalog');
+            
+            savedItems.push('Sinkronisasi Transaksi & Hutang');
+
+            saveAllToLocal();
+            updateProfileUI(); renderProducts(); updateWalletUI();
+
+            const isApiSuccess = await pushToGitHubAPI();
+            let apiInfo = isApiSuccess ? '<br><br><b style="color:var(--success);">Sinkronisasi API Berhasil</b>' : '<br><br><b style="color:var(--danger);">Gagal sinkron API (Hanya di Lokal)</b>';
+
+            if (warnings.length > 0) { showAnimAlert('warning', 'Tersimpan Sebagian', `<b>Sukses:</b><br>- ${savedItems.join('<br>- ')}<br><span style="color:var(--danger);"><b>Gagal:</b><br>- ${warnings.join('<br>- ')}</span>${apiInfo}`); } 
+            else { showAnimAlert('success', 'Berhasil Disimpan!', `Semua data sukses di-update.<br>${apiInfo}`); }
+        }
+
+        // ==========================================
+        // 7. MANAGE DATA, LAPORAN UMUM & GRAFIK (DIKEMBALIKAN UTUH)
+        // ==========================================
+        function renderAdminProducts() {
+            const container = document.getElementById('admin-product-list');
+            const search = (document.getElementById('searchAdminProduct')?.value || '').toLowerCase();
+            
+            let html = `<table><tr><th>Nama & Kategori</th><th>Stok</th><th>Harga (Rp)</th><th>Hapus</th></tr>`;
+            products.forEach((p, i) => {
+                if (search && !p.name.toLowerCase().includes(search) && !p.category.toLowerCase().includes(search)) return;
+
+                html += `<tr><td>${p.name} <br><small style="color:var(--primary)">${p.category}</small></td>
+                    <td><input type="number" style="width:65px; padding:8px;" value="${p.stock}" id="stock-${i}" oninput="products[${i}].stock = parseInt(this.value) || 0"></td>
+                    <td><input type="number" style="width:95px; padding:8px;" value="${p.price}" id="price-${i}" oninput="products[${i}].price = parseInt(this.value) || 0"></td>
+                    <td><button class="btn-danger" style="padding:8px;" onclick="deleteProduct(${i})">X</button></td></tr>`;
+            });
+            html += `</table>`; container.innerHTML = html;
+        }
+
+        function deleteProduct(index) {
+            showAnimAlert('warning', 'Hapus Produk', `Yakin menghapus <b>${products[index].name}</b> secara permanen?`, async () => {
+                showAnimAlert('loading', 'Menghapus...', 'Menyinkronkan data...');
+                products.splice(index, 1); localStorage.setItem('products', JSON.stringify(products));
+                await pushToGitHubAPI(); renderAdminProducts(); renderProducts();
+                showAnimAlert('success', 'Terhapus!', 'Produk dihapus dari katalog.');
+            });
+        }
+
+        function setFilter(type, btnElement) {
+            currentFilterType = type; 
+            document.querySelectorAll('#report-filters .filter-chip').forEach(btn => btn.classList.remove('active')); 
+            btnElement.classList.add('active'); 
+            renderReports();
+        }
+
+        function renderReports() {
+            const now = new Date();
+            
+            filteredTransactions = transactions.filter(tx => {
+                if (currentFilterType === 'semua') return true;
+                const txDate = new Date(tx.id);
+                if (currentFilterType === 'hari') return txDate.getDate() === now.getDate() && txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+                if (currentFilterType === 'bulan') return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+                if (currentFilterType === 'tahun') return txDate.getFullYear() === now.getFullYear();
+                return true;
+            });
+
+            let filteredDamaged = damagedGoods.filter(d => {
+                if (currentFilterType === 'semua') return true;
+                const dDate = new Date(d.id);
+                if (currentFilterType === 'hari') return dDate.getDate() === now.getDate() && dDate.getMonth() === now.getMonth() && dDate.getFullYear() === now.getFullYear();
+                if (currentFilterType === 'bulan') return dDate.getMonth() === now.getMonth() && dDate.getFullYear() === now.getFullYear();
+                if (currentFilterType === 'tahun') return dDate.getFullYear() === now.getFullYear();
+                return true;
+            });
+
+            filteredTransactions.reverse(); 
+            let totalOmset = 0; let totalLaba = 0;
+            let historyHTML = `<table><tr><th>Tanggal</th><th>Item</th><th>Omset</th><th>X</th></tr>`;
+            
+            filteredTransactions.forEach(tx => {
+                totalOmset += tx.total; totalLaba += tx.profit;
+                const itemsStr = tx.items.map(i => `${i.name}(${i.qty})`).join(', ');
+                historyHTML += `<tr><td style="font-size:0.8em;">${tx.date}</td><td>${itemsStr}</td><td>${rp(tx.total)}</td><td><button class="btn-danger" style="padding:5px;" onclick="deleteTransaction(${tx.id})">X</button></td></tr>`;
+            });
+            historyHTML += `</table>`;
+            
+            let totalRugi = 0;
+            filteredDamaged.forEach(d => { totalRugi += (d.costLoss || 0); });
+            let labaBersih = totalLaba - totalRugi;
+
+            document.getElementById('rep-count').innerText = filteredTransactions.length; 
+            document.getElementById('rep-omset').innerText = rp(totalOmset); 
+            document.getElementById('rep-laba').innerText = rp(totalLaba); 
+            document.getElementById('rep-rugi-text').innerText = rp(labaBersih);
+            document.getElementById('transaction-history').innerHTML = historyHTML;
+
+            renderSalesChart(filteredTransactions);
+        }
+
+        function renderSalesChart(data) {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            if(salesChartInstance) salesChartInstance.destroy();
+
+            const grouped = {};
+            const chartData = [...data].reverse();
+
+            chartData.forEach(tx => {
+                const dateKey = tx.date.split(',')[0]; 
+                if(!grouped[dateKey]) grouped[dateKey] = 0;
+                grouped[dateKey] += tx.total;
+            });
+
+            const labels = Object.keys(grouped);
+            const dataPoints = Object.values(grouped);
+
+            salesChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length > 0 ? labels : ['Belum ada data'],
+                    datasets: [{
+                        label: 'Omset (Rp)',
+                        data: dataPoints.length > 0 ? dataPoints : [0],
+                        borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                        borderWidth: 3, pointBackgroundColor: '#4ade80',
+                        pointBorderColor: '#fff', pointRadius: 5, fill: true, tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true, plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } } },
+                    animation: { y: { duration: 1500, easing: 'easeOutQuart' }, x: { duration: 1500, easing: 'easeOutQuart' } }
+                }
+            });
+        }
+
+        function sendRecapWA() {
+            if(filteredTransactions.length === 0) { showToast('Tidak ada data untuk direkap.'); return; }
+            let filterText = "Semua Waktu";
+            if(currentFilterType === 'hari') filterText = "Hari Ini";
+            if(currentFilterType === 'bulan') filterText = "Bulan Ini";
+            if(currentFilterType === 'tahun') filterText = "Tahun Ini";
+
+            let labaBersihText = document.getElementById('rep-rugi-text').innerText;
+
+            let text = `*REKAP LAPORAN PENJUALAN*\nPeriode: ${filterText}\n\nTotal Transaksi: *${document.getElementById('rep-count').innerText}*\nTotal Pendapatan: *${document.getElementById('rep-omset').innerText}*\nTotal Laba: *${document.getElementById('rep-laba').innerText}*\nTotal Laba Dikurang Kerugian: *${labaBersihText}*\n\n*Rincian Transaksi:*\n`;
+            filteredTransactions.forEach(tx => { const itemsStr = tx.items.map(i => `${i.name}(${i.qty})`).join(', '); text += `▪️ ${tx.date}\n   ${itemsStr}\n   Nominal: ${rp(tx.total)}\n\n`; });
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        function deleteTransaction(id) {
+            showAnimAlert('warning', 'Hapus Riwayat', 'Yakin menghapus riwayat transaksi ini?', async () => {
+                showAnimAlert('loading', 'Menghapus...', 'Sinkronisasi Cloud...');
+                transactions = transactions.filter(tx => tx.id !== id); localStorage.setItem('transactions', JSON.stringify(transactions)); 
+                await pushToGitHubAPI(); renderReports(); updateWalletUI(); renderAdvancedStats();
+                showAnimAlert('success', 'Terhapus!', 'Riwayat transaksi berhasil dihapus.');
+            });
+        }
+
+        function clearHistory() {
+            if(filteredTransactions.length === 0) { showToast('Laporan sudah kosong.'); return; }
+            showAnimAlert('warning', 'Hapus Semua Riwayat!', 'Semua riwayat transaksi di filter ini akan dihapus. Lanjutkan?', async () => {
+                showAnimAlert('loading', 'Membersihkan...', 'Sinkronisasi Cloud...');
+                const idsToRemove = filteredTransactions.map(t => t.id); transactions = transactions.filter(tx => !idsToRemove.includes(tx.id));
+                localStorage.setItem('transactions', JSON.stringify(transactions)); await pushToGitHubAPI(); renderReports(); updateWalletUI(); renderAdvancedStats();
+                showAnimAlert('success', 'Pembersihan Selesai!', 'Riwayat laporan dikosongkan.');
+            });
+        }
+
+        // ==========================================
+        // 8. PANTAU KATEGORI & TOP PRODUK (DIKEMBALIKAN UTUH)
+        // ==========================================
+        function setAdvancedFilter(type, btnElement) {
+            currentAdvancedFilterType = type;
+            document.querySelectorAll('#advanced-filters .filter-chip').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+            renderAdvancedStats();
+        }
+
+        function renderAdvancedStats() {
+            const now = new Date();
+            const nowMs = now.getTime();
+            
+            let filteredTx = transactions.filter(tx => {
+                if (currentAdvancedFilterType === 'semua') return true;
+                const txDate = new Date(tx.id);
+                
+                if (currentAdvancedFilterType === 'hari') return txDate.getDate() === now.getDate() && txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+                if (currentAdvancedFilterType === '7hari') return (nowMs - tx.id) <= (7 * 24 * 60 * 60 * 1000);
+                if (currentAdvancedFilterType === 'bulan') return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+                if (currentAdvancedFilterType === '3bulan') { const d = new Date(); d.setMonth(now.getMonth() - 3); return tx.id >= d.getTime(); }
+                if (currentAdvancedFilterType === '6bulan') { const d = new Date(); d.setMonth(now.getMonth() - 6); return tx.id >= d.getTime(); }
+                if (currentAdvancedFilterType === '1tahun') { const d = new Date(); d.setFullYear(now.getFullYear() - 1); return tx.id >= d.getTime(); }
+                return true;
+            });
+
+            let catData = {};
+            let productData = {};
+
+            filteredTx.forEach(tx => {
+                tx.items.forEach(item => {
+                    const cat = item.category || 'Uncategorized';
+                    if(!catData[cat]) catData[cat] = { qty: 0, omset: 0 };
+                    catData[cat].qty += item.qty;
+                    catData[cat].omset += (item.price * item.qty);
+
+                    if(!productData[item.id]) {
+                        productData[item.id] = { name: item.name, qty: 0, omset: 0 };
+                    }
+                    productData[item.id].qty += item.qty;
+                    productData[item.id].omset += (item.price * item.qty);
+                });
+            });
+
+            const catContainer = document.getElementById('category-sales-list');
+            if(Object.keys(catData).length === 0) {
+                catContainer.innerHTML = '<div style="text-align:center; padding: 20px; background:#0f172a; border-radius:8px; border: 1px dashed #334155; color:var(--text-muted);">Belum ada penjualan di periode ini.</div>';
+                document.getElementById('top-products-list').innerHTML = ''; 
+                return;
+            }
+
+            let sortedCats = Object.entries(catData).sort((a,b) => b[1].omset - a[1].omset);
+            let maxOmset = sortedCats.length > 0 ? sortedCats[0][1].omset : 0;
+            let catHtml = `<div style="display:flex; flex-direction:column; gap:12px;">`;
+            
+            sortedCats.forEach(([cat, data]) => {
+                let percent = maxOmset > 0 ? (data.omset / maxOmset) * 100 : 0;
+                catHtml += `
+                <div style="background: rgba(15, 23, 42, 0.9); padding: 15px; border-radius: 10px; border: 1px solid #334155; position: relative; overflow: hidden; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);">
+                    <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${percent}%; background: rgba(56, 189, 248, 0.15); border-right: 2px solid var(--primary); z-index: 0; transition: width 1s;"></div>
+                    <div style="position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;">
+                        <div><strong style="color:var(--text-main); font-size:1.05em;">${cat}</strong><br>
+                        <small style="color:var(--text-muted);"><span class="glow-dot-blue" style="width:6px;height:6px;"></span> Terjual: <b>${data.qty}</b> item</small></div>
+                        <div style="text-align: right; font-weight: bold; color: var(--success); font-size:1.1em;">${rp(data.omset)}</div>
+                    </div>
+                </div>`;
+            });
+            catHtml += `</div>`;
+            catContainer.innerHTML = catHtml;
+
+            let sortedProducts = Object.values(productData).sort((a,b) => b.qty - a.qty).slice(0, 10); 
+            let topHtml = `<div style="display:grid; gap:10px;">`;
+            
+            sortedProducts.forEach((p, i) => {
+                let rankColor = "var(--primary)";
+                if(i === 0) rankColor = "#fbbf24"; 
+                else if(i === 1) rankColor = "#94a3b8"; 
+                else if(i === 2) rankColor = "#d97706"; 
+
+                topHtml += `
+                <div style="background:rgba(30, 41, 59, 0.9); padding:12px 15px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; border: 1px solid #334155;">
+                    <div>
+                        <strong style="color:${rankColor}; font-size:1.1em; margin-right:8px;">#${i+1}</strong> 
+                        <span style="color:var(--text-main); font-weight:500;">${p.name}</span>
+                    </div>
+                    <div>
+                        <span style="background:var(--success); color:#064e3b; padding:4px 10px; border-radius:12px; font-size:0.85em; font-weight:bold; box-shadow: 0 0 8px rgba(74,222,128,0.4);">
+                            ${p.qty} Terjual
+                        </span>
+                    </div>
+                </div>`;
+            });
+            topHtml += `</div>`;
+            document.getElementById('top-products-list').innerHTML = topHtml;
+        }
+
+        // ==========================================
+        // 9. FITUR PENCATATAN HUTANG & NYICIL (DIKEMBALIKAN UTUH)
+        // ==========================================
+        function renderDebts() {
+            const container = document.getElementById('debt-list');
+            let total = 0;
+            let html = `<table><tr><th>Nama Pelanggan</th><th>Total Hutang</th><th>Rincian Barang</th><th>Aksi</th></tr>`;
+            
+            debts.forEach((d, i) => {
+                total += d.amount;
+                
+                let historyHTML = d.history.map(h => {
+                    if(h.amount > 0) return `<small style="color:var(--danger)">${h.date}: ${h.desc} (+${rp(h.amount)})</small>`;
+                    else return `<small style="color:var(--success)">${h.date}: ${h.desc} (${rp(h.amount)})</small>`;
+                }).join('<br>');
+
+                let spinIcon = `<span class="digital-debt-icon" title="Hutang Aktif"></span>`;
+
+                html += `<tr>
+                    <td><strong>${d.name}</strong> ${spinIcon}</td>
+                    <td style="color:var(--danger); font-weight:bold; font-size:1.1em;">${rp(d.amount)}</td>
+                    <td style="font-size: 0.85em; max-height: 80px; overflow-y: auto; display: block;">${historyHTML}</td>
+                    <td><button class="btn-warning" style="padding:6px 12px; font-size:0.85em; width:100%; color:#0f172a; font-weight:bold;" onclick="payDebt(${i})">Bayar/Nyicil</button></td>
+                </tr>`;
+            });
+            html += `</table>`;
+            container.innerHTML = html;
+            document.getElementById('total-hutang').innerText = rp(total);
+
+            let paidHtml = `<table><tr><th>Nama</th><th>Tgl Lunas</th><th>Riwayat Lengkap</th></tr>`;
+            paidDebts.forEach(d => {
+                let hist = d.history.map(h => `<small>${h.date}: ${h.desc} (${h.amount > 0 ? '+'+rp(h.amount) : rp(h.amount)})</small>`).join('<br>');
+                paidHtml += `<tr><td><strong>${d.name}</strong></td><td>${d.lunasDate}</td><td style="font-size:0.8em;">${hist}</td></tr>`;
+            });
+            paidHtml += `</table>`;
+            document.getElementById('paid-debt-list').innerHTML = paidHtml;
+        }
+
+        function addDebt() {
+            const name = document.getElementById('debt-name').value.trim();
+            const desc = document.getElementById('debt-desc').value.trim();
+            const amount = parseInt(document.getElementById('debt-amount').value);
+            
+            if(!name || !amount) { showToast('Nama dan Jumlah Tambahan wajib diisi!'); return; }
+            
+            const now = new Date();
+            const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+            const existingIndex = debts.findIndex(d => d.name.toLowerCase() === name.toLowerCase());
+            
+            if(existingIndex !== -1) {
+                debts[existingIndex].amount += amount;
+                if(!debts[existingIndex].history) debts[existingIndex].history = [];
+                debts[existingIndex].history.push({ date: dateStr, amount: amount, desc: desc || 'Tanpa Keterangan' });
+            } else {
+                debts.push({
+                    id: Date.now(), name: name, amount: amount,
+                    history: [{ date: dateStr, amount: amount, desc: desc || 'Tanpa Keterangan' }]
+                });
+            }
+            
+            localStorage.setItem('debts', JSON.stringify(debts));
+            document.getElementById('debt-name').value = ''; 
+            document.getElementById('debt-desc').value = ''; 
+            document.getElementById('debt-amount').value = '';
+            
+            renderDebts(); renderPublicDebts();
+            showToast('Catatan kasbon berhasil ditambahkan/diupdate!');
+        }
+
+        function payDebt(index) {
+            const debt = debts[index];
+            const payAmountStr = prompt(`Pembayaran untuk ${debt.name}\nTotal Hutang: ${rp(debt.amount)}\n\nMasukkan jumlah yang dibayar (Rp):`, debt.amount);
+            
+            if(payAmountStr === null) return; 
+            const payAmount = parseInt(payAmountStr);
+            if(isNaN(payAmount) || payAmount <= 0) { showToast("Jumlah tidak valid!"); return; }
+
+            const now = new Date();
+            const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+
+            if(payAmount >= debt.amount) {
+                debt.history.push({ date: dateStr, amount: -debt.amount, desc: "Pelunasan" });
+                debt.amount = 0; debt.lunasDate = dateStr;
+                paidDebts.push(debt); debts.splice(index, 1);
+                showToast("Hutang Lunas Sepenuhnya!");
+            } else {
+                debt.amount -= payAmount;
+                debt.history.push({ date: dateStr, amount: -payAmount, desc: "Cicilan" });
+                showToast(`Cicilan berhasil dibayar. Sisa hutang: ${rp(debt.amount)}`);
+            }
+
+            localStorage.setItem('debts', JSON.stringify(debts)); localStorage.setItem('paidDebts', JSON.stringify(paidDebts));
+            renderDebts(); renderPublicDebts();
+        }
+
+        function renderPublicDebts() {
+            const container = document.getElementById('public-debt-list');
+            if(debts.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--text-muted);">Tidak ada kasbon aktif.</p>`;
+                return;
+            }
+            
+            let html = `<div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">`;
+            debts.forEach(d => {
+                let spinIcon = `<span class="digital-debt-icon"></span>`;
+                html += `
+                <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid var(--danger); padding: 15px; border-radius: 12px; min-width: 200px; max-width: 250px; text-align: center;">
+                    <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 5px;">${d.name} ${spinIcon}</div>
+                    <div style="color: var(--danger); font-size: 1.3em; font-weight: bold;">${rp(d.amount)}</div>
+                    <div style="font-size: 0.85em; color: var(--text-muted); margin-top: 10px; max-height: 80px; overflow-y: auto; text-align: left; padding: 5px; background: rgba(0,0,0,0.3); border-radius: 5px;">
+                        ${d.history.map(h => {
+                            if(h.amount > 0) return `<div><span style="color:var(--danger)">+${rp(h.amount)}</span> (${h.desc})</div>`;
+                            else return `<div><span style="color:var(--success)">${rp(h.amount)}</span> (${h.desc})</div>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // ==========================================
+        // 10. FITUR BARANG RUSAK (DIKEMBALIKAN UTUH)
+        // ==========================================
+        function renderDamagedTab() {
+            const select = document.getElementById('dmg-product');
+            let options = `<option value="">-- Pilih Produk --</option>`;
+            products.forEach(p => {
+                options += `<option value="${p.id}">${p.name} (Sisa Stok: ${p.stock})</option>`;
+            });
+            select.innerHTML = options;
+            renderDamagedList();
+        }
+
+        function addDamaged() {
+            const pId = parseInt(document.getElementById('dmg-product').value);
+            const qty = parseInt(document.getElementById('dmg-qty').value);
+            const note = document.getElementById('dmg-note').value.trim();
+            
+            if(!pId) return showToast("Pilih produk terlebih dahulu!");
+            if(isNaN(qty) || qty <= 0) return showToast("Jumlah rusak tidak valid!");
+
+            const product = products.find(p => p.id === pId);
+            if(product.stock < qty) return showToast("Jumlah melebihi stok yang tersisa!");
+
+            product.stock -= qty;
+            const costLoss = (product.cost || 0) * qty;
+            
+            const now = new Date();
+            const dateStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}`;
+
+            damagedGoods.push({
+                id: Date.now(),
+                date: dateStr,
+                productId: product.id,
+                productName: product.name,
+                qty: qty,
+                costLoss: costLoss,
+                note: note || "Tanpa keterangan"
+            });
+
+            localStorage.setItem('damagedGoods', JSON.stringify(damagedGoods));
+            localStorage.setItem('products', JSON.stringify(products)); 
+            
+            document.getElementById('dmg-qty').value = '';
+            document.getElementById('dmg-note').value = '';
+            
+            renderDamagedTab();
+            renderProducts(); 
+            renderAdminProducts();
+            showToast("Barang rusak berhasil dicatat & stok berkurang!");
+        }
+
+        function renderDamagedList() {
+            const container = document.getElementById('damaged-list');
+            if(damagedGoods.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted); text-align:center;">Belum ada riwayat barang rusak.</p>';
+                document.getElementById('total-rugi').innerText = rp(0);
+                return;
+            }
+
+            let html = `<table><tr><th>Tanggal</th><th>Produk</th><th>Jml</th><th>Rugi Modal</th><th>Keterangan</th></tr>`;
+            let totalLoss = 0;
+            
+            [...damagedGoods].reverse().forEach(d => {
+                totalLoss += d.costLoss;
+                html += `<tr>
+                    <td style="font-size:0.8em;">${d.date}</td>
+                    <td>${d.productName}</td>
+                    <td style="color:var(--danger); font-weight:bold;">-${d.qty}</td>
+                    <td style="color:var(--warning);">${rp(d.costLoss)}</td>
+                    <td style="font-size:0.8em;">${d.note}</td>
+                </tr>`;
+            });
+            html += `</table>`;
+            container.innerHTML = html;
+            document.getElementById('total-rugi').innerText = rp(totalLoss);
+        }
+
+        // ==========================================
+        // 11. FITUR BARU: CATATAN TIM (TASK BOARD)
+        // ==========================================
+        function renderNotes() {
+            const container = document.getElementById('notes-container');
+            if(!notes || notes.length === 0) { 
+                container.innerHTML = '<p style="color:var(--text-muted); grid-column: 1 / -1; text-align:center;">Belum ada catatan atau daftar tugas.</p>'; 
+                return; 
+            }
+            let html = '';
+            notes.forEach((n, i) => {
+                html += `
+                <div class="sticky-note">
+                    <button class="delete-note" onclick="deleteNote(${i})" title="Hapus Catatan">✕</button>
+                    <div style="white-space: pre-wrap; margin-top: 10px; font-weight: 500;">${n.text}</div>
+                    <div class="sticky-note-date">${n.date}</div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function addNote() {
+            const text = document.getElementById('new-note-text').value.trim();
+            if(!text) return showToast("Teks catatan kosong!");
+            const now = new Date();
+            const dateStr = `${now.getDate()}/${now.getMonth()+1} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            
+            notes.push({ text: text, date: dateStr });
+            saveAllToLocal(); // Simpan Local
+            pushToGitHubAPI(); // Tarik ke cloud agar admin lain lihat
+            
+            document.getElementById('new-note-text').value = '';
+            renderNotes(); showToast("Catatan ditempel!");
+        }
+
+        function deleteNote(index) {
+            notes.splice(index, 1);
+            saveAllToLocal(); pushToGitHubAPI();
+            renderNotes();
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
